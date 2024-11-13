@@ -36,10 +36,8 @@ O objetivo principal do WORD NEWS é fornecer acesso rápido e organizado a info
 - 📳 **Feedback Sensorial**: Vibração ao alternar o tema, proporcionando uma resposta sensorial rápida ao usuário.
 
 ## 🖼️ Prévia das Telas
-
-- **Tela de Seleção de País**
-- **Tela de Notícias**
-- **Tela de Clima e Horário**
+![1](https://github.com/user-attachments/assets/d9830937-2372-44f4-888a-f55a99aae59f)
+![2](https://github.com/user-attachments/assets/b2431037-1f28-4a4a-b224-8063f5160115)
 
 ## 🚀 Tecnologias Utilizadas
 
