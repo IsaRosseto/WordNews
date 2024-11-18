@@ -1,165 +1,136 @@
 // telas/TelaCadastro.js
-import React, { useState, useContext } from 'react';
-import { 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  ScrollView, 
-  Alert, 
-  StyleSheet, 
-  View 
-} from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
 import { registrarUsuario } from '../utils/Usuario';
-import { TemaContexto } from '../contextos/TemaContexto';
-import { temas } from '../contextos/temas/Temas';
+import { useNavigation } from '@react-navigation/native';
 
-const TelaCadastro = ({ navigation }) => {
-  const { tema } = useContext(TemaContexto);
-  const estilos = criarEstilos(temas[tema]);
-
+const TelaCadastro = () => {
+  const navigation = useNavigation();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [pais, setPais] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [erro, setErro] = useState('');
 
-  const cadastrarUsuarioLocal = async () => {
-    if (!nome || !email || !senha || !pais) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
-      return;
-    }
-
-    const regexEmail = /\S+@\S+\.\S+/;
-    if (!regexEmail.test(email)) {
-      Alert.alert('Erro', 'Por favor, insira um e-mail válido.');
-      return;
-    }
-
-    if (senha.length < 6) {
-      Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres.');
+  const handleCadastro = async () => {
+    if (senha !== confirmarSenha) {
+      setErro('As senhas não coincidem');
       return;
     }
 
     try {
-      await registrarUsuario(nome, email, senha, pais);
-      Alert.alert('Sucesso', 'Conta criada com sucesso!');
-      navigation.navigate('TelaLogin');
+      await registrarUsuario(nome, email, senha); // Inclui o nome no registro
+      // Redireciona para a tela de login após o cadastro bem-sucedido
+      navigation.replace('TelaLogin');
     } catch (error) {
-      Alert.alert('Erro', error.message);
+      setErro(error.message);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={estilos.container}>
-      <Text style={estilos.titulo}>Criar Conta</Text>
-      <TextInput
-        style={estilos.input}
-        placeholder="Nome Completo"
-        placeholderTextColor={temas[tema].inputText}
-        value={nome}
-        onChangeText={setNome}
-      />
-      <TextInput
-        style={estilos.input}
-        placeholder="E-mail"
-        placeholderTextColor={temas[tema].inputText}
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={estilos.input}
-        placeholder="Senha"
-        placeholderTextColor={temas[tema].inputText}
-        value={senha}
-        onChangeText={setSenha}
-        secureTextEntry
-      />
-      <View style={estilos.pickerContainer}>
-        <Picker
-          selectedValue={pais}
-          style={estilos.picker}
-          onValueChange={(itemValue) => setPais(itemValue)}
-          dropdownIconColor={temas[tema].link}
-        >
-          <Picker.Item label="Selecione seu país de residência" value="" />
-          <Picker.Item label="Alemanha" value="Alemanha" />
-          <Picker.Item label="Estados Unidos" value="Estados Unidos" />
-          <Picker.Item label="Brasil" value="Brasil" />
-          <Picker.Item label="Itália" value="Itália" />
-          <Picker.Item label="Israel" value="Israel" />
-        </Picker>
+    <View style={estilos.container}>
+      <View style={estilos.logoContainer}>
+        <Icon name="globe" size={80} color="#4a90e2" />
+        <Text style={estilos.logoTexto}>Globo News</Text>
       </View>
-      <TouchableOpacity style={estilos.botao} onPress={cadastrarUsuarioLocal}>
-        <Text style={estilos.textoBotao}>Cadastrar</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('TelaLogin')}>
-        <Text style={estilos.textoCadastro}>Já possui uma conta? Faça login</Text>
-      </TouchableOpacity>
-    </ScrollView>
+
+      <View style={estilos.formContainer}>
+        <TextInput
+          style={estilos.input}
+          placeholder="Nome"
+          placeholderTextColor="#A9A9A9"
+          autoCapitalize="words"
+          onChangeText={setNome}
+          value={nome}
+        />
+        <TextInput
+          style={estilos.input}
+          placeholder="Email"
+          placeholderTextColor="#A9A9A9"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          onChangeText={setEmail}
+          value={email}
+        />
+        <TextInput
+          style={estilos.input}
+          placeholder="Senha"
+          placeholderTextColor="#A9A9A9"
+          secureTextEntry
+          onChangeText={setSenha}
+          value={senha}
+        />
+        <TextInput
+          style={estilos.input}
+          placeholder="Confirmar Senha"
+          placeholderTextColor="#A9A9A9"
+          secureTextEntry
+          onChangeText={setConfirmarSenha}
+          value={confirmarSenha}
+        />
+        {erro ? <Text style={estilos.erroTexto}>{erro}</Text> : null}
+
+        <TouchableOpacity style={estilos.botaoCadastro} onPress={handleCadastro}>
+          <Text style={estilos.botaoTexto}>Cadastrar</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
-const criarEstilos = (tema) => StyleSheet.create({
+const estilos = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    padding: 30,
-    backgroundColor: tema.background,
+    flex: 1,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
+    paddingHorizontal: 20,
   },
-  titulo: {
-    fontSize: 28,
-    marginBottom: 30,
-    textAlign: 'center',
-    color: tema.texto,
-    fontWeight: '700',
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 50,
+  },
+  logoTexto: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#4a90e2',
+    marginTop: 10,
+  },
+  formContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 15,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 6,
   },
   input: {
-    height: 50,
-    borderColor: tema.borda,
-    borderWidth: 1,
-    marginBottom: 20,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    backgroundColor: tema.inputBackground,
-    color: tema.inputText,
+    borderBottomWidth: 1,
+    borderColor: '#D1D1D1',
+    paddingVertical: 10,
+    paddingHorizontal: 5,
     fontSize: 16,
-  },
-  pickerContainer: {
-    borderColor: tema.borda,
-    borderWidth: 1,
-    borderRadius: 25,
+    color: '#333333',
     marginBottom: 20,
-    overflow: 'hidden',
-    backgroundColor: tema.inputBackground,
   },
-  picker: {
-    height: 50,
-    color: tema.inputText,
-  },
-  botao: {
-    backgroundColor: tema.botao,
+  botaoCadastro: {
+    backgroundColor: '#4a90e2',
     paddingVertical: 15,
-    borderRadius: 25,
+    borderRadius: 10,
     alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: tema.botao,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
-    elevation: 5,
+    marginTop: 10,
   },
-  textoBotao: {
+  botaoTexto: {
     color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: 'bold',
   },
-  textoCadastro: {
-    color: tema.link,
+  erroTexto: {
+    color: '#FF3B30',
     textAlign: 'center',
-    fontSize: 16,
-    textDecorationLine: 'underline',
+    marginBottom: 15,
   },
 });
 

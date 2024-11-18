@@ -1,23 +1,31 @@
-// temas/temas.js
+// contextos/temas/Temas.js
 export const temas = {
-  light: {
-    background: '#F2F2F2',
+  claro: {
+    background: '#F5F5F5',
     texto: '#333333',
-    borda: '#CCCCCC',
-    botao: '#4CAF50',
-    card: '#FFFFFF',
     link: '#1E90FF',
-    inputBackground: '#FFFFFF',
-    inputText: '#333333',
+    card: '#FFFFFF',
+    noticiaBackground: '#F0F0F0',
+    botao: '#1E90FF',
+    borda: '#CCCCCC',
+    erro: '#FF6347',
+    sombra: '#000000',
+    placeholder: '#CCCCCC',
+    fonteTitulo: 'Montserrat-Bold',
+    fonteTexto: 'Montserrat-Regular',
   },
-  dark: {
+  escuro: {
     background: '#121212',
     texto: '#FFFFFF',
-    borda: '#444444',
-    botao: '#BB86FC',
-    card: '#1E1E1E',
     link: '#BB86FC',
-    inputBackground: '#1E1E1E',
-    inputText: '#FFFFFF',
+    card: '#1E1E1E',
+    noticiaBackground: '#2C2C2C',
+    botao: '#BB86FC',
+    borda: '#333333',
+    erro: '#FF6B6B',
+    sombra: '#FFFFFF',
+    placeholder: '#555555',
+    fonteTitulo: 'Montserrat-Bold',
+    fonteTexto: 'Montserrat-Regular',
   },
 };

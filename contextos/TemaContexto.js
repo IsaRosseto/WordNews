@@ -1,27 +1,15 @@
 // contextos/TemaContexto.js
-import React, { createContext, useState, useEffect } from 'react';
-import { Appearance } from 'react-native';
+import React, { createContext, useState } from 'react';
+import { temas } from './temas/Temas';
 
 export const TemaContexto = createContext();
 
 export const TemaProvider = ({ children }) => {
-  const esquemaPreferido = Appearance.getColorScheme();
-  const [tema, setTema] = useState(esquemaPreferido || 'light');
+  const [tema, setTema] = useState('claro');
 
   const alternarTema = () => {
-    setTema((temaAtual) => (temaAtual === 'light' ? 'dark' : 'light'));
+    setTema((prevTema) => (prevTema === 'claro' ? 'escuro' : 'claro'));
   };
-
-  // Ouvir mudanças no esquema de cores do dispositivo
-  useEffect(() => {
-    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
-      if (colorScheme) {
-        setTema(colorScheme);
-      }
-    });
-
-    return () => subscription.remove();
-  }, []);
 
   return (
     <TemaContexto.Provider value={{ tema, alternarTema }}>

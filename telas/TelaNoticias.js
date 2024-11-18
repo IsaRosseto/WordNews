@@ -13,34 +13,15 @@ import {
   Dimensions,
 } from 'react-native';
 import axios from 'axios';
+import * as rssParser from 'react-native-rss-parser';
 import { TemaContexto } from '../contextos/TemaContexto';
 import { temas } from '../contextos/temas/Temas';
-import * as rssParser from 'react-native-rss-parser'; // Importação do parser de RSS
+import { rssFeedsPorPais } from './rssFeedsPorPais';
+import SpotifyPlayer from '../components/SpotifyPlayer';
+import noticiaImage from '../assets/default-news.png';
 
-const CHAVE_NEWS_API = '756e808da5774ca09c92a2d0b3aaad88'; // Sua chave NewsAPI
-const CHAVE_WEATHER_API = '3818a54964d7a21434592243282f7f2e'; // Sua chave OpenWeatherMap
 
 const { width } = Dimensions.get('window');
-
-const rssFeedsPorPais = {
-  de: [
-    'https://www.tagesschau.de/xml/rss2',
-    'https://www.spiegel.de/international/index.rss',
-  ],
-  br: [
-    'https://noticias.uol.com.br/index.xml',
-    'https://feeds.folha.uol.com.br/emcimadahora/rss091.xml',
-  ],
-  it: [
-    'https://www.repubblica.it/rss/homepage/rss2.0.xml',
-    'https://www.ilsole24ore.com/rss/home.xml',
-  ],
-  il: [
-    'https://www.israelnationalnews.com/RssMain.aspx',
-    'https://www.jpost.com/Rss/RssFeedsHeadlines.aspx',
-  ],
-};
-
 
 const TelaNoticias = ({ route }) => {
   const { paisSelecionado, countryCode, timezone } = route.params || {};
@@ -53,17 +34,18 @@ const TelaNoticias = ({ route }) => {
   const [carregando, setCarregando] = useState(true);
 
   const URL_TIME_API = 'https://worldtimeapi.org/api/timezone';
+  const API_KEY_WEATHER = '3818a54964d7a21434592243282f7f2e'; // api chave
 
   useEffect(() => {
     const buscarDados = async () => {
       try {
-        // Obter Clima
+        //Clima
         const respostaClima = await axios.get(
           `https://api.openweathermap.org/data/2.5/weather`,
           {
             params: {
               q: paisSelecionado,
-              appid: CHAVE_WEATHER_API,
+              appid: API_KEY_WEATHER,
               units: 'metric',
               lang: 'pt_br',
             },
@@ -75,29 +57,18 @@ const TelaNoticias = ({ route }) => {
           icone: `https://openweathermap.org/img/wn/${respostaClima.data.weather[0].icon}@2x.png`,
         });
 
-        // Obter Horário
+        // Horário
         const respostaHora = await axios.get(`${URL_TIME_API}/${timezone}`);
-        const datetime = respostaHora.data.datetime;
-        const horaAtual = datetime.substring(11, 16);
-        setHora(horaAtual);
+        if (respostaHora.data && respostaHora.data.datetime) {
+          const datetime = respostaHora.data.datetime;
+          const horaAtual = datetime.substring(11, 16);
+          setHora(horaAtual);
+        } else {
+          setHora("Horário não disponível");
+        }
 
-        // Obter Notícias
-        if (countryCode === 'us') {
-          // Estados Unidos: Usar NewsAPI com pageSize = 5
-          const respostaNoticias = await axios.get(
-            `https://newsapi.org/v2/top-headlines`,
-            {
-              params: {
-                country: countryCode,
-                apiKey: CHAVE_NEWS_API,
-                language: 'en',
-                pageSize: 5,
-              },
-            }
-          );
-          setNoticias(respostaNoticias.data.articles);
-        } else if (rssFeedsPorPais[countryCode]) {
-          // Outros países (Alemanha, Brasil, Itália, Israel): Usar RSS Feeds
+        // Obter Notícias via RSS Feeds - transforma em JSON
+        if (rssFeedsPorPais[countryCode]) {
           const feeds = rssFeedsPorPais[countryCode];
           const promises = feeds.map(async (feedUrl) => {
             try {
@@ -107,6 +78,7 @@ const TelaNoticias = ({ route }) => {
                 title: item.title,
                 description: item.description,
                 link: item.links[0]?.url || item.links[0],
+                // imagem API
                 image: item.enclosure?.url || item.media?.thumbnail?.url || item.media?.content?.url || null,
                 pubDate: item.published || item.pubDate || null,
               }));
@@ -119,18 +91,14 @@ const TelaNoticias = ({ route }) => {
           const resultadosFeeds = await Promise.all(promises);
           let todasNoticias = resultadosFeeds.flat();
           todasNoticias = todasNoticias.filter(noticia => noticia.title && noticia.link);
-          todasNoticias = todasNoticias.sort((a, b) => {
-            const dateA = new Date(a.pubDate || 0);
-            const dateB = new Date(b.pubDate || 0);
-            return dateB - dateA;
-          });
+          todasNoticias = todasNoticias.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
           todasNoticias = todasNoticias.slice(0, 5);
           setNoticias(todasNoticias);
         } else {
           Alert.alert('Erro', `País não suportado: ${paisSelecionado}`);
         }
       } catch (error) {
-        console.error('Erro na requisição:', error.message);
+        console.error('Erro ao carregar dados:', error.message);
         Alert.alert('Erro', 'Ocorreu um erro ao carregar os dados.');
       } finally {
         setCarregando(false);
@@ -151,52 +119,59 @@ const TelaNoticias = ({ route }) => {
 
   return (
     <View style={estilos.container}>
-      <View style={estilos.secao}>
-        <Text style={estilos.tituloSecao}>Clima Atual</Text>
-        <View style={estilos.infoClima}>
-          {clima && (
-            <>
-              <Image source={{ uri: clima.icone }} style={estilos.iconeClima} />
-              <View>
-                <Text style={estilos.textoClima}>{clima.temperatura}°C</Text>
-                <Text style={estilos.textoCondicao}>{clima.condicao}</Text>
-              </View>
-            </>
-          )}
+      <View style={estilos.headerContainer}>
+        <View style={estilos.secao}>
+          <Text style={estilos.tituloSecao}>Clima Atual</Text>
+          <View style={estilos.infoClima}>
+            {clima && (
+              <>
+                <Image source={{ uri: clima.icone }} style={estilos.iconeClima} />
+                <View>
+                  <Text style={estilos.textoClima}>{clima.temperatura}°C</Text>
+                  <Text style={estilos.textoCondicao}>{clima.condicao}</Text>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+
+        <View style={estilos.secao}>
+          <Text style={estilos.tituloSecao}>Horário Atual</Text>
+          <Text style={estilos.textoHora}>{hora || "Horário não disponível"}</Text>
         </View>
       </View>
 
-      <View style={estilos.secao}>
-        <Text style={estilos.tituloSecao}>Horário Atual</Text>
-        <Text style={estilos.textoHora}>{hora}</Text>
-      </View>
+      <SpotifyPlayer countryCode={countryCode} />
 
-      <View style={estilos.secao}>
+      <View style={estilos.secaoNoticias}>
         <Text style={estilos.tituloSecao}>Principais Notícias</Text>
         {noticias.length === 0 ? (
           <Text style={estilos.textoCarregando}>Nenhuma notícia encontrada.</Text>
         ) : (
-          <FlatList
-            data={noticias}
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity 
-                style={estilos.noticia} 
-                onPress={() => Linking.openURL(item.link)} 
-                activeOpacity={0.8}
-              >
-                {item.image && (
-                  <Image source={{ uri: item.image }} style={estilos.imagemNoticia} />
-                )}
-                <View style={estilos.conteudoNoticia}>
-                  <Text style={estilos.tituloNoticia} numberOfLines={2}>{item.title}</Text>
-                  <Text style={estilos.descricaoNoticia} numberOfLines={3}>{item.description}</Text>
-                  <Text style={estilos.linkNoticia}>Leia mais</Text>
-                </View>
-              </TouchableOpacity>
-            )}
-            showsVerticalScrollIndicator={false}
-          />
+<FlatList
+  data={noticias}
+  keyExtractor={(item, index) => index.toString()}
+  renderItem={({ item }) => (
+    <TouchableOpacity 
+      style={estilos.noticia} 
+      onPress={() => Linking.openURL(item.link)} 
+      activeOpacity={0.8}
+    >
+      {/* Usa a imagem original do feed, ou a imagem local caso não exista */}
+      {item.image ? (
+        <Image source={{ uri: item.image }} style={estilos.imagemNoticia} />
+      ) : (
+        <Image source={noticiaImage} style={estilos.imagemNoticia} />
+      )}
+      <View style={estilos.conteudoNoticia}>
+        <Text style={estilos.tituloNoticia} numberOfLines={2}>{item.title}</Text>
+        <Text style={estilos.descricaoNoticia} numberOfLines={3}>{item.description}</Text>
+        <Text style={estilos.linkNoticia}>Leia mais</Text>
+      </View>
+    </TouchableOpacity>
+  )}
+  showsVerticalScrollIndicator={false}
+/>
         )}
       </View>
     </View>
@@ -209,60 +184,86 @@ const criarEstilos = (tema) => StyleSheet.create({
     padding: 15,
     backgroundColor: tema.background,
   },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
   secao: {
-    marginBottom: 25,
+    flex: 1,
+    alignItems: 'center',
+    padding: 10,
+    marginHorizontal: 5,
+    backgroundColor: tema.card,
+    borderRadius: 15,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   tituloSecao: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
-    marginBottom: 10,
     color: tema.texto,
+    marginBottom: 5,
   },
   infoClima: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   iconeClima: {
-    width: 60,
-    height: 60,
-    marginRight: 15,
+    width: 50,
+    height: 50,
+    marginRight: 10,
   },
   textoClima: {
-    fontSize: 20,
+    fontSize: 16,
     color: tema.texto,
     fontWeight: '600',
   },
   textoCondicao: {
-    fontSize: 16,
+    fontSize: 14,
     color: tema.texto,
-    fontWeight: '400',
   },
   textoHora: {
     fontSize: 18,
     color: tema.texto,
     fontWeight: '500',
+    marginTop: 5,
+  },
+  secaoNoticias: {
+    flex: 1,
+    paddingTop: 20,
   },
   noticia: {
     flexDirection: 'row',
     backgroundColor: tema.card,
     borderRadius: 15,
     marginBottom: 15,
-    overflow: 'hidden',
-    shadowColor: tema.borda,
-    shadowOffset: { width: 0, height: 2 },
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowRadius: 6,
     elevation: 5,
     alignItems: 'flex-start',
   },
   imagemNoticia: {
-    width: 100,
+    width: 120,
     height: 100,
-    marginRight: 10,
+    borderRadius: 10,
+    marginRight: 15,
+  },
+  placeholderImagem: {
+    width: 120,
+    height: 100,
+    backgroundColor: '#CCC',
+    borderRadius: 10,
+    marginRight: 15,
   },
   conteudoNoticia: {
     flex: 1,
-    padding: 10,
     justifyContent: 'space-between',
   },
   tituloNoticia: {

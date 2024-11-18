@@ -1,5 +1,5 @@
 // App.js
-import 'react-native-gesture-handler'; // Deve ser a primeira importação
+import 'react-native-gesture-handler';
 import React, { useContext } from 'react';
 import { StatusBar, TouchableOpacity, Text } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
@@ -19,12 +19,13 @@ const Stack = createStackNavigator();
 const ConteudoApp = () => {
   const { tema, alternarTema } = useContext(TemaContexto);
 
-  const temaNavegacao = tema === 'dark' ? DarkTheme : DefaultTheme;
+  // Define o tema de navegação com base no tema atual (claro ou escuro)
+  const temaNavegacao = tema === 'escuro' ? DarkTheme : DefaultTheme;
 
   return (
     <NavigationContainer theme={temaNavegacao}>
-      <StatusBar barStyle={tema === 'dark' ? 'light-content' : 'dark-content'} />
-      <Stack.Navigator initialRouteName="TelaDashboard">
+      <StatusBar barStyle={tema === 'escuro' ? 'light-content' : 'dark-content'} />
+      <Stack.Navigator initialRouteName="TelaLogin">
         <Stack.Screen 
           name="TelaLogin" 
           component={TelaLogin} 
@@ -35,7 +36,7 @@ const ConteudoApp = () => {
           component={TelaCadastro} 
           options={{ title: 'Cadastro' }} 
         />
-        <Stack.Screen 
+ <Stack.Screen 
           name="TelaDashboard" 
           component={TelaDashboard} 
           options={{
